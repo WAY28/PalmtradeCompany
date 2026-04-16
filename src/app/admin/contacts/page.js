@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2, Mail, Trash2, Eye, CheckCheck, MessageSquare } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
@@ -14,20 +16,22 @@ export default function AdminContactsPage() {
   const [deleting, setDeleting] = useState(null)
   const [filter, setFilter] = useState('all')
 
-  const supabase = getSupabaseClient()
+  const getSupabase = useCallback(() => getSupabaseClient(), [])
 
   const load = useCallback(async () => {
     setLoading(true)
+    const supabase = getSupabase()
     const { data } = await supabase.from('contacts').select('*').order('created_at', { ascending: false })
     setContacts(data || [])
     setLoading(false)
-  }, [])
+  }, [getSupabase])
 
   useEffect(() => { load() }, [load])
 
   const viewContact = async (contact) => {
     setViewing(contact)
     if (!contact.is_read) {
+      const supabase = getSupabase()
       await supabase.from('contacts').update({ is_read: true }).eq('id', contact.id)
       setContacts((prev) => prev.map((c) => c.id === contact.id ? { ...c, is_read: true } : c))
     }
@@ -37,12 +41,14 @@ export default function AdminContactsPage() {
     if (!confirm(`Delete message from ${contact.name}?`)) return
     setDeleting(contact.id)
     try {
+      const supabase = getSupabase()
       await supabase.from('contacts').delete().eq('id', contact.id)
       await load()
     } finally { setDeleting(null) }
   }
 
   const markAllRead = async () => {
+    const supabase = getSupabase()
     await supabase.from('contacts').update({ is_read: true }).eq('is_read', false)
     await load()
   }
@@ -69,7 +75,7 @@ export default function AdminContactsPage() {
     { key: 'company', label: 'Company', render: (val) => <span className="text-gray-500 text-sm">{val || '—'}</span> },
     { key: 'country', label: 'Country', render: (val) => <span className="text-gray-500 text-sm">{val || '—'}</span> },
     {
-      key: 'message', label: 'Message', 
+      key: 'message', label: 'Message',
       render: (val) => <span className="text-gray-500 text-sm line-clamp-1 max-w-xs">{val}</span>,
     },
     {
@@ -94,7 +100,6 @@ export default function AdminContactsPage() {
         )}
       </div>
 
-      {/* Filter */}
       <div className="flex gap-2 mb-6">
         {[
           { key: 'all', label: `All (${contacts.length})` },
@@ -125,11 +130,9 @@ export default function AdminContactsPage() {
         />
       )}
 
-      {/* View modal */}
       <FormModal open={!!viewing} onClose={() => setViewing(null)} title="Message Detail">
         {viewing && (
           <div className="flex flex-col gap-5">
-            {/* Sender info */}
             <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Name</p>
@@ -153,7 +156,6 @@ export default function AdminContactsPage() {
               </div>
             </div>
 
-            {/* Message */}
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Message</p>
               <div className="p-4 bg-brand-light/30 border border-brand-green/20 rounded-xl">
@@ -161,7 +163,6 @@ export default function AdminContactsPage() {
               </div>
             </div>
 
-            {/* Reply actions */}
             <div className="flex gap-3 pt-2">
               <a href={`mailto:${viewing.email}?subject=Re: Palm Trade Company Inquiry`}
                 className="flex-1 flex items-center justify-center gap-2 bg-brand-green text-brand-dark font-semibold py-2.5 rounded-full text-sm hover:bg-brand-yellow transition-all">
