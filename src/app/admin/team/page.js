@@ -20,10 +20,10 @@ export default function AdminTeamPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(null)
 
-  const supabase = getSupabaseClient()
-
+  // ✅ Dipindahkan ke dalam fungsi, tidak di level komponen
   const load = useCallback(async () => {
     setLoading(true)
+    const supabase = getSupabaseClient()
     const { data } = await supabase.from('team').select('*').order('sort_order')
     setTeam(data || [])
     setLoading(false)
@@ -40,6 +40,7 @@ export default function AdminTeamPage() {
     e.preventDefault()
     if (!form.name || !form.role_en) return alert('Name and role are required.')
     setSaving(true)
+    const supabase = getSupabaseClient()
     try {
       if (editing) {
         await supabase.from('team').update(form).eq('id', editing.id)
@@ -55,6 +56,7 @@ export default function AdminTeamPage() {
   const handleDelete = async (member) => {
     if (!confirm(`Delete ${member.name}?`)) return
     setDeleting(member.id)
+    const supabase = getSupabaseClient()
     try {
       await supabase.from('team').delete().eq('id', member.id)
       await load()

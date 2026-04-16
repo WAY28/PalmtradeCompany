@@ -36,10 +36,10 @@ export default function AdminProductsPage() {
   const [deleting, setDeleting] = useState(null)
   const [docsInput, setDocsInput] = useState('')
 
-  const supabase = getSupabaseClient()
-
+  // ✅ Dipindahkan ke dalam fungsi, tidak di level komponen
   const load = useCallback(async () => {
     setLoading(true)
+    const supabase = getSupabaseClient()
     const { data } = await supabase.from('products').select('*').order('sort_order')
     setProducts(data || [])
     setLoading(false)
@@ -65,6 +65,7 @@ export default function AdminProductsPage() {
     const docs = docsInput.split('\n').map((d) => d.trim()).filter(Boolean)
     const payload = { ...form, documents: docs }
     setSaving(true)
+    const supabase = getSupabaseClient()
     try {
       if (editing) {
         await supabase.from('products').update(payload).eq('id', editing.id)
@@ -80,6 +81,7 @@ export default function AdminProductsPage() {
   const handleDelete = async (product) => {
     if (!confirm(`Delete ${product.market} product?`)) return
     setDeleting(product.id)
+    const supabase = getSupabaseClient()
     try {
       await supabase.from('products').delete().eq('id', product.id)
       await load()

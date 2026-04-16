@@ -28,10 +28,10 @@ export default function AdminNewsPage() {
   const [deleting, setDeleting] = useState(null)
   const [tab, setTab] = useState('id') // 'id' | 'en'
 
-  const supabase = getSupabaseClient()
-
+  // ✅ Dipindahkan ke dalam fungsi, tidak di level komponen
   const load = useCallback(async () => {
     setLoading(true)
+    const supabase = getSupabaseClient()
     const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false })
     setPosts(data || [])
     setLoading(false)
@@ -45,7 +45,6 @@ export default function AdminNewsPage() {
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
 
-  // Auto-generate slug from english title
   const handleTitleEn = (val) => {
     set('title_en', val)
     if (!editing) set('slug', slugify(val))
@@ -56,6 +55,7 @@ export default function AdminNewsPage() {
     if (!form.title_id || !form.title_en) return alert('Both titles are required.')
     if (!form.slug) return alert('Slug is required.')
     setSaving(true)
+    const supabase = getSupabaseClient()
     try {
       const payload = { ...form, updated_at: new Date().toISOString() }
       if (editing) {
@@ -76,6 +76,7 @@ export default function AdminNewsPage() {
   const handleDelete = async (post) => {
     if (!confirm(`Delete "${post.title_en}"?`)) return
     setDeleting(post.id)
+    const supabase = getSupabaseClient()
     try {
       await supabase.from('posts').delete().eq('id', post.id)
       await load()
@@ -85,6 +86,7 @@ export default function AdminNewsPage() {
   }
 
   const togglePublish = async (post) => {
+    const supabase = getSupabaseClient()
     await supabase.from('posts').update({ is_published: !post.is_published }).eq('id', post.id)
     await load()
   }
@@ -195,10 +197,8 @@ export default function AdminNewsPage() {
         />
       )}
 
-      {/* Modal */}
       <FormModal open={modal} onClose={closeModal} title={editing ? 'Edit Post' : 'New Post'} size="xl">
         <form onSubmit={handleSave} className="flex flex-col gap-5">
-          {/* Image */}
           <ImageUpload
             value={form.image_url}
             onChange={(url) => set('image_url', url)}
@@ -206,13 +206,11 @@ export default function AdminNewsPage() {
             label="Featured Image"
           />
 
-          {/* Slug */}
           <div>
             <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider block mb-1.5">Slug *</label>
             <input value={form.slug} onChange={(e) => set('slug', e.target.value)} required placeholder="post-slug-url" className={inputClass} />
           </div>
 
-          {/* Language tabs */}
           <div>
             <div className="flex gap-2 mb-4">
               {[{ key: 'id', label: '🇮🇩 Indonesia' }, { key: 'en', label: '🇬🇧 English' }].map((l) => (
@@ -256,7 +254,6 @@ export default function AdminNewsPage() {
             )}
           </div>
 
-          {/* Publish toggle */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div>
               <p className="text-sm font-medium text-gray-700">Published</p>
