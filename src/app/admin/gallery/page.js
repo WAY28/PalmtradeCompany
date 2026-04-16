@@ -22,10 +22,10 @@ export default function AdminGalleryPage() {
   const [deleting, setDeleting] = useState(null)
   const [filter, setFilter] = useState('all')
 
-  const supabase = getSupabaseClient()
-
+  // ✅ Pindahkan ke dalam useCallback/fungsi agar tidak dieksekusi saat build
   const load = useCallback(async () => {
     setLoading(true)
+    const supabase = getSupabaseClient()
     const { data } = await supabase.from('gallery').select('*').order('sort_order')
     setItems(data || [])
     setLoading(false)
@@ -41,6 +41,7 @@ export default function AdminGalleryPage() {
     e.preventDefault()
     if (!form.image_url) return alert('Please upload an image first.')
     setSaving(true)
+    const supabase = getSupabaseClient()
     try {
       if (editing) {
         await supabase.from('gallery').update(form).eq('id', editing.id)
@@ -59,6 +60,7 @@ export default function AdminGalleryPage() {
   const handleDelete = async (item) => {
     if (!confirm(`Delete this image?`)) return
     setDeleting(item.id)
+    const supabase = getSupabaseClient()
     try {
       // Remove from storage
       if (item.image_url?.includes('palmtrade-images')) {
